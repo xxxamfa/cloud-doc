@@ -17,6 +17,7 @@ function App() {
   const [activeFileID, setActiveFileID] = useState("");
   const [openedFileIDs, setOpenedFileIDs] = useState([]);
   const [unsavedFileIDs, setUnsavedFileIDs] = useState([]);
+  const [searchedFiles, setSearchedFiles] = useState([]);
   const openedFiles = openedFileIDs.map((openID) => {
     return files.find((file) => file.id === openID);
   });
@@ -55,26 +56,38 @@ function App() {
     }
   };
 
+  const deleteFile = (id) => {
+    const newFiles = files.filter((file) => file.id !== id);
+    setFiles(newFiles);
+    // 重要bug修復
+    tabClose(id);
+  };
+  const updateFileName = (id, title) => {
+    const newFiles = files.map((file) => {
+      if (file.id === id) {
+        file.title = title;
+      }
+      return file;
+    });
+    setFiles(newFiles);
+  };
+  const fileSearch = (keyword) => {
+    const newFiles = files.filter((file) => {
+      return file.title.includes(keyword)
+    });
+    setSearchedFiles(newFiles);
+  };
+  const fileListArr = searchedFiles.length > 0 ? searchedFiles : files;
   return (
     <div className="App container-fluid px-0">
       <div className="row no-gutters">
         <div className="col-3 bg-light left-panel">
-          <FileSearch
-            title="我的雲文檔"
-            onFileSearch={(value) => {
-              console.log(value);
-            }}
-          />
+          <FileSearch title="我的雲文檔" onFileSearch={fileSearch} />
           <FileList
-            files={files}
+            files={fileListArr}
             onFileClick={fileClick}
-            onFileDelete={(id) => {
-              console.log("Delete", id);
-            }}
-            onSaveEdit={(id, newValue) => {
-              console.log(id);
-              console.log(newValue);
-            }}
+            onFileDelete={deleteFile}
+            onSaveEdit={updateFileName}
           />
           <div className="row no-gutters button-group">
             <div className="col">

@@ -22,6 +22,7 @@ const FileSearch = ({ title, onFileSearch }) => {
     // e.preventDefault();
     setInputActive(false);
     setValue("");
+    onFileSearch("");
   };
   //全域事件
   useEffect(() => {
