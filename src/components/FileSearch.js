@@ -95,7 +95,7 @@ const FileSearch = ({ title, onFileSearch }) => {
 // 檢查型別 . isRequired:必傳入
 FileSearch.propTypes = {
   title: PropTypes.string,
-  inFileSearch: PropTypes.func.isRequired,
+  onFileSearch: PropTypes.func.isRequired,
 };
 
 // 預設傳入值設定

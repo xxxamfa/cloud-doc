@@ -2,9 +2,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMarkdown } from "@fortawesome/free-brands-svg-icons";
 import PropTypes from "prop-types";
 import { faEdit, faTimes, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import useKeyPress from "../hooks/useKeyPress";
-
 
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   // 是否為修改狀態與修改的值
@@ -15,22 +14,26 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const enterPressed = useKeyPress(13);
   const escPressed = useKeyPress(27);
   // 關閉輸入
-  const closeSearch = () => {
+  const closeSearch = (editItem) => {
     // 取消默認處理
     // e.preventDefault();
     setEditStatus(false);
     setValue("");
+    if (editItem.isNew) {
+      onFileDelete(editItem.id);
+    }
   };
   //全域事件
-  useEffect(() => {
+  useEffect(
+    () => {
       // enter=13 . exc=27
-      if (enterPressed && editStatus) {
-        const editItem = files.find((file) => file.id === editStatus);
+      const editItem = files.find((file) => file.id === editStatus);
+      if (enterPressed && editStatus && value.trim() !== "") {
         onSaveEdit(editItem.id, value);
         setEditStatus(false);
         setValue("");
       } else if (escPressed && editStatus) {
-        closeSearch();
+        closeSearch(editItem);
       }
     }
     // // 使用
@@ -40,6 +43,24 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     //   document.removeEventListener("keyup", handleInputEvent);
     // };
   );
+  useEffect(() => {
+    const newFile = files.find((file) => file.isNew);
+    if (newFile) {
+      console.log("newFile.id", newFile.id);
+      // ??????不懂這段
+      setEditStatus(newFile.id);
+      setValue(newFile.title);
+    }
+  }, [files]);
+  // watch
+  // focus輸入框
+  // 修改狀態時游標focus到輸入框
+  let node = useRef(null);
+  useEffect(() => {
+    if (editStatus) {
+      node.current.focus();
+    }
+  }, [editStatus]);
   return (
     <ul className="list-group list-group-flush file-list">
       {files.map((file) => (
@@ -47,7 +68,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
           className="list-group-item bg-light row d-flex align-items-center mx-0"
           key={file.id}
         >
-          {file.id !== editStatus && (
+          {file.id !== editStatus && !file.isNew && (
             <>
               <span className="col-2">
                 <FontAwesomeIcon icon={faMarkdown} size="lg" />
@@ -81,11 +102,13 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
               </button>
             </>
           )}
-          {file.id === editStatus && (
+          {(file.id === editStatus || file.isNew) && (
             <>
               <input
                 className="form-control col-10"
                 value={value}
+                placeholder="請輸入文件名稱"
+                ref={node}
                 onChange={(e) => {
                   setValue(e.target.value);
                 }}
@@ -93,7 +116,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
               <button
                 type="button"
                 className="icon-button col-2"
-                onClick={closeSearch}
+                onClick={() => closeSearch(file)}
               >
                 <FontAwesomeIcon icon={faTimes} size="lg" title="關閉" />
               </button>

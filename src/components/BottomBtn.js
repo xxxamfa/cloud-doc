@@ -5,7 +5,7 @@ const BottomBtn = ({ text, colorClass, icon, onBtnClick }) => (
   <button
     type="button"
     className={`btn btn-block no-border ${colorClass}`}
-    onclick={onBtnClick}
+    onClick={onBtnClick}
   >
     <FontAwesomeIcon size="lg" icon={icon} className="mr-2" />
     {text}

@@ -11,6 +11,7 @@ import TabList from "./components/TabList";
 import { useState } from "react";
 import SimpleMDE from "react-simplemde-editor";
 import "easymde/dist/easymde.min.css";
+import { v4 as uuidv4 } from "uuid";
 
 function App() {
   const [files, setFiles] = useState(defaultFiles);
@@ -66,6 +67,7 @@ function App() {
     const newFiles = files.map((file) => {
       if (file.id === id) {
         file.title = title;
+        file.isNew = false;
       }
       return file;
     });
@@ -73,10 +75,26 @@ function App() {
   };
   const fileSearch = (keyword) => {
     const newFiles = files.filter((file) => {
-      return file.title.includes(keyword)
+      return file.title.includes(keyword);
     });
     setSearchedFiles(newFiles);
   };
+
+  const createNewFile = () => {
+    const newID = uuidv4();
+    const newFiles = [
+      ...files,
+      {
+        id: newID,
+        title: "",
+        body: "## 請輸入",
+        createdAt: new Date().getTime(),
+        isNew: true,
+      },
+    ];
+    setFiles(newFiles);
+  };
+
   const fileListArr = searchedFiles.length > 0 ? searchedFiles : files;
   return (
     <div className="App container-fluid px-0">
@@ -95,6 +113,7 @@ function App() {
                 text="新建"
                 colorClass="btn-primary"
                 icon={faPlus}
+                onBtnClick={createNewFile}
               ></BottomBtn>
             </div>
             <div className="col">
