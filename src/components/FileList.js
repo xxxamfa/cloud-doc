@@ -29,7 +29,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
       // enter=13 . exc=27
       const editItem = files.find((file) => file.id === editStatus);
       if (enterPressed && editStatus && value.trim() !== "") {
-        onSaveEdit(editItem.id, value);
+        onSaveEdit(editItem.id, value, editItem.isNew);
         setEditStatus(false);
         setValue("");
       } else if (escPressed && editStatus) {

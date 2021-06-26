@@ -6,13 +6,22 @@ import FileSearch from "./components/FileSearch";
 import FileList from "./components/FileList";
 import defaultFiles from "./utils/defaultFiles";
 import BottomBtn from "./components/BottomBtn";
-import { faFileImport, faPlus } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFileImport,
+  faPlus,
+  faSave,
+} from "@fortawesome/free-solid-svg-icons";
 import TabList from "./components/TabList";
 import { useState } from "react";
 import SimpleMDE from "react-simplemde-editor";
 import "easymde/dist/easymde.min.css";
 import { v4 as uuidv4 } from "uuid";
 import { flattenArr, objToArr } from "./utils/helper";
+import fileHelper from "./utils/fileHelper";
+// 路徑組合功能
+const { join } = window.require("path");
+// 直接使用主進程API可透過remote
+const { remote } = window.require("electron");
 
 function App() {
   const [files, setFiles] = useState(flattenArr(defaultFiles));
@@ -21,6 +30,8 @@ function App() {
   const [unsavedFileIDs, setUnsavedFileIDs] = useState([]);
   const [searchedFiles, setSearchedFiles] = useState([]);
   const filesArr = objToArr(files);
+  // 取得文檔位置
+  const savedLocation = remote.app.getPath("documents");
 
   const fileClick = (fileID) => {
     setActiveFileID(fileID);
@@ -58,9 +69,24 @@ function App() {
     // 重要bug修復
     tabClose(id);
   };
-  const updateFileName = (id, title) => {
+  const updateFileName = (id, title, isNew) => {
     const modifiedFile = { ...files[id], title, isNew: false };
-    setFiles({ ...files, [id]: modifiedFile });
+    if (isNew) {
+      fileHelper
+        .writeFile(join(savedLocation, `${title}.md`), files[id].body)
+        .then(() => {
+          setFiles({ ...files, [id]: modifiedFile });
+        });
+    } else {
+      fileHelper
+        .renameFile(
+          join(savedLocation, `${files[id].title}.md`),
+          join(savedLocation, `${title}.md`)
+        )
+        .then(() => {
+          setFiles({ ...files, [id]: modifiedFile });
+        });
+    }
   };
   const fileSearch = (keyword) => {
     const newFiles = filesArr.filter((file) => {
@@ -80,6 +106,15 @@ function App() {
     };
     setFiles({ ...files, [newID]: newFile });
   };
+
+  const saveCurrentFile = () => {
+    fileHelper
+      .writeFile(join(savedLocation, `${activeFile.title}.md`), activeFile.body)
+      .then(() => {
+        setUnsavedFileIDs(unsavedFileIDs.filter((id) => id !== activeFile.id));
+      });
+  };
+
   const openedFiles = openedFileIDs.map((openID) => {
     return files[openID];
   });
@@ -136,6 +171,12 @@ function App() {
                   minHeight: "515px",
                 }}
               />
+              <BottomBtn
+                text="導入"
+                colorClass="btn-success"
+                icon={faSave}
+                onBtnClick={saveCurrentFile}
+              ></BottomBtn>
             </>
           )}
         </div>

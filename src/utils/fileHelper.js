@@ -1,5 +1,6 @@
-const fs = require("fs").promises;
-const path = require("path");
+// 若在非純node,js環境使用要加上window.
+const fs = window.require("fs").promises;
+const path = window.require("path");
 // 如此封裝目的是為讓code更好管理
 const fileHelper = {
   readFile: (path) => {
@@ -16,19 +17,4 @@ const fileHelper = {
   },
 };
 
-const testPath = path.join(__dirname, "helper.js");
-// 新檔案產生路徑
-const testWritePath = path.join(__dirname, "hello.md");
-const renamePath = path.join(__dirname, "rename.md");
-// fileHelper.readFile(testPath).then((data) => {
-//   console.log("data", data);
-// });
-// fileHelper.writeFile(testWritePath, "## hello world").then(() => {
-//   console.log("寫入成功");
-// });
-// fileHelper.renameFile(testWritePath, renamePath).then(() => {
-//   console.log("重新命名成功");
-// });
-fileHelper.deleteFile(renamePath).then(() => {
-  console.log(`${renamePath} 刪除成功`);
-});
+export default fileHelper;

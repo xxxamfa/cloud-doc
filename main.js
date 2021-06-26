@@ -13,6 +13,8 @@ app.on("ready", () => {
       nodeIntegration: true,
       contextIsolation: false,
       // 允許用node end
+      // 允許使用remote
+      enableRemoteModule: true,
     },
   });
   // 若為開發環境使用"http://localhost:3000" : 注意不是https是http.寫錯會開不了electron
