@@ -12,23 +12,23 @@ import { useState } from "react";
 import SimpleMDE from "react-simplemde-editor";
 import "easymde/dist/easymde.min.css";
 import { v4 as uuidv4 } from "uuid";
+import { flattenArr, objToArr } from "./utils/helper";
 
 function App() {
-  const [files, setFiles] = useState(defaultFiles);
+  const [files, setFiles] = useState(flattenArr(defaultFiles));
   const [activeFileID, setActiveFileID] = useState("");
   const [openedFileIDs, setOpenedFileIDs] = useState([]);
   const [unsavedFileIDs, setUnsavedFileIDs] = useState([]);
   const [searchedFiles, setSearchedFiles] = useState([]);
-  const openedFiles = openedFileIDs.map((openID) => {
-    return files.find((file) => file.id === openID);
-  });
+  const filesArr = objToArr(files);
+
   const fileClick = (fileID) => {
     setActiveFileID(fileID);
     if (!openedFileIDs.includes(fileID)) {
       setOpenedFileIDs([...openedFileIDs, fileID]);
     }
   };
-  const activeFile = files.find((file) => file.id === activeFileID);
+  const activeFile = files[activeFileID];
 
   const tabClick = (fileID) => {
     setActiveFileID(fileID);
@@ -45,36 +45,25 @@ function App() {
   };
 
   const fileChange = (id, value) => {
-    const newFiles = files.map((file) => {
-      if (file.id === id) {
-        file.body = value;
-      }
-      return file;
-    });
-    setFiles(newFiles);
+    const newFile = { ...files[id], body: value };
+    setFiles({ ...files, [id]: newFile });
     if (!unsavedFileIDs.includes(id)) {
       setUnsavedFileIDs([...unsavedFileIDs, id]);
     }
   };
 
   const deleteFile = (id) => {
-    const newFiles = files.filter((file) => file.id !== id);
-    setFiles(newFiles);
+    delete files[id];
+    setFiles(files);
     // 重要bug修復
     tabClose(id);
   };
   const updateFileName = (id, title) => {
-    const newFiles = files.map((file) => {
-      if (file.id === id) {
-        file.title = title;
-        file.isNew = false;
-      }
-      return file;
-    });
-    setFiles(newFiles);
+    const modifiedFile = { ...files[id], title, isNew: false };
+    setFiles({ ...files, [id]: modifiedFile });
   };
   const fileSearch = (keyword) => {
-    const newFiles = files.filter((file) => {
+    const newFiles = filesArr.filter((file) => {
       return file.title.includes(keyword);
     });
     setSearchedFiles(newFiles);
@@ -82,20 +71,19 @@ function App() {
 
   const createNewFile = () => {
     const newID = uuidv4();
-    const newFiles = [
-      ...files,
-      {
-        id: newID,
-        title: "",
-        body: "## 請輸入",
-        createdAt: new Date().getTime(),
-        isNew: true,
-      },
-    ];
-    setFiles(newFiles);
+    const newFile = {
+      id: newID,
+      title: "",
+      body: "## 請輸入",
+      createdAt: new Date().getTime(),
+      isNew: true,
+    };
+    setFiles({ ...files, [newID]: newFile });
   };
-
-  const fileListArr = searchedFiles.length > 0 ? searchedFiles : files;
+  const openedFiles = openedFileIDs.map((openID) => {
+    return files[openID];
+  });
+  const fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr;
   return (
     <div className="App container-fluid px-0">
       <div className="row no-gutters">
