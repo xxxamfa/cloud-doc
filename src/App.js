@@ -28,7 +28,7 @@ const Store = window.require("electron-store");
 // 起手式
 const fileStore = new Store({ name: "Files Data" });
 
-// 重組需要存到electron-store的資料.像isNew判斷資料和body大型資料不要存進去.body存本機就好
+// 重組需要存到electron-store的資料.像isNew判斷資料和body大型資料不要存進去.body存本機就好(用fs)
 // 小技巧:物件轉arra更好處理
 const saveFilesToStore = (files) => {
   const fileStoreObj = objToArr(files).reduce((result, file) => {
@@ -57,6 +57,14 @@ function App() {
 
   const fileClick = (fileID) => {
     setActiveFileID(fileID);
+    const currentFile = files[fileID];
+    if (!currentFile.isLoaded) {
+      fileHelper.readFile(currentFile.path).then((value) => {
+        const newFile = { ...files[fileID], body: value, isLoaded: true };
+        setFiles({ ...files, [fileID]: newFile });
+      });
+    }
+
     if (!openedFileIDs.includes(fileID)) {
       setOpenedFileIDs([...openedFileIDs, fileID]);
     }
@@ -92,7 +100,7 @@ function App() {
       saveFilesToStore(files);
       // 重要bug修復
       tabClose(id);
-    })
+    });
   };
   const updateFileName = (id, title, isNew) => {
     const newPath = join(savedLocation, `${title}.md`);
