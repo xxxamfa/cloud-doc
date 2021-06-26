@@ -18,25 +18,35 @@ import "easymde/dist/easymde.min.css";
 import { v4 as uuidv4 } from "uuid";
 import { flattenArr, objToArr } from "./utils/helper";
 import fileHelper from "./utils/fileHelper";
+// node 模塊
 // 路徑組合功能
 const { join } = window.require("path");
 // 直接使用主進程API可透過remote
 const { remote } = window.require("electron");
 // 使用electron-store
-const Store = window.require('electron-store')
+const Store = window.require("electron-store");
 // 起手式
-const store = new Store()
-// 存值
-store.set('name', 'viking')
-// 取值
-console.log(store.get('name'));
-// 刪除
-store.delete("name");
-console.log(store.get("name"));
+const fileStore = new Store({ name: "Files Data" });
 
+// 重組需要存到electron-store的資料.像isNew判斷資料和body大型資料不要存進去.body存本機就好
+// 小技巧:物件轉arra更好處理
+const saveFilesToStore = (files) => {
+  const fileStoreObj = objToArr(files).reduce((result, file) => {
+    const { id, path, title, createsAt } = file;
+    result[id] = {
+      id,
+      path,
+      title,
+      createsAt,
+    };
+    return result;
+  }, {});
+  fileStore.set("files", fileStoreObj);
+};
 
 function App() {
-  const [files, setFiles] = useState(flattenArr(defaultFiles));
+  // 如果沒資料就給空物件
+  const [files, setFiles] = useState(fileStore.get("files") || {});
   const [activeFileID, setActiveFileID] = useState("");
   const [openedFileIDs, setOpenedFileIDs] = useState([]);
   const [unsavedFileIDs, setUnsavedFileIDs] = useState([]);
@@ -76,28 +86,30 @@ function App() {
   };
 
   const deleteFile = (id) => {
-    delete files[id];
-    setFiles(files);
-    // 重要bug修復
-    tabClose(id);
+    fileHelper.deleteFile(files[id].path).then(() => {
+      delete files[id];
+      setFiles(files);
+      saveFilesToStore(files);
+      // 重要bug修復
+      tabClose(id);
+    })
   };
   const updateFileName = (id, title, isNew) => {
-    const modifiedFile = { ...files[id], title, isNew: false };
+    const newPath = join(savedLocation, `${title}.md`);
+    const modifiedFile = { ...files[id], title, isNew: false, path: newPath };
+    const newFiles = { ...files, [id]: modifiedFile };
     if (isNew) {
-      fileHelper
-        .writeFile(join(savedLocation, `${title}.md`), files[id].body)
-        .then(() => {
-          setFiles({ ...files, [id]: modifiedFile });
-        });
+      fileHelper.writeFile(newPath, files[id].body).then(() => {
+        setFiles(newFiles);
+        saveFilesToStore(newFiles);
+      });
     } else {
-      fileHelper
-        .renameFile(
-          join(savedLocation, `${files[id].title}.md`),
-          join(savedLocation, `${title}.md`)
-        )
-        .then(() => {
-          setFiles({ ...files, [id]: modifiedFile });
-        });
+      const oldPath = join(savedLocation, `${files[id].title}.md`);
+
+      fileHelper.renameFile(oldPath, newFiles).then(() => {
+        setFiles(newFiles);
+        saveFilesToStore(newFiles);
+      });
     }
   };
   const fileSearch = (keyword) => {
