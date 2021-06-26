@@ -22,6 +22,18 @@ import fileHelper from "./utils/fileHelper";
 const { join } = window.require("path");
 // 直接使用主進程API可透過remote
 const { remote } = window.require("electron");
+// 使用electron-store
+const Store = window.require('electron-store')
+// 起手式
+const store = new Store()
+// 存值
+store.set('name', 'viking')
+// 取值
+console.log(store.get('name'));
+// 刪除
+store.delete("name");
+console.log(store.get("name"));
+
 
 function App() {
   const [files, setFiles] = useState(flattenArr(defaultFiles));
