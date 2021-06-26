@@ -94,13 +94,22 @@ function App() {
   };
 
   const deleteFile = (id) => {
-    fileHelper.deleteFile(files[id].path).then(() => {
-      delete files[id];
-      setFiles(files);
-      saveFilesToStore(files);
-      // 重要bug修復
-      tabClose(id);
-    });
+    if (files[id].isNew) {
+      // 法一 . 因為刪除資料有修改資料卻沒用setXXX.所以files資料室沒變的.解:必用...匯入新的資料
+      // delete files[id];
+      // setFiles({ ...files });
+      // 法二 . afterDelete:刪掉[id]: value後剩下的
+      const { [id]: value, ...afterDelete } = files;
+      setFiles(afterDelete);
+    } else {
+      fileHelper.deleteFile(files[id].path).then(() => {
+        delete files[id];
+        setFiles({ ...files });
+        saveFilesToStore(files);
+        // 重要bug修復
+        tabClose(id);
+      });
+    }
   };
   const updateFileName = (id, title, isNew) => {
     const newPath = join(savedLocation, `${title}.md`);
