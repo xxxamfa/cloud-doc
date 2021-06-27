@@ -12,7 +12,7 @@ import {
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import TabList from "./components/TabList";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SimpleMDE from "react-simplemde-editor";
 import "easymde/dist/easymde.min.css";
 import { v4 as uuidv4 } from "uuid";
@@ -21,7 +21,7 @@ import fileHelper from "./utils/fileHelper";
 // node 模塊
 const { join, basename, extname, dirname } = window.require("path");
 // 直接使用主進程API可透過remote
-const { remote } = window.require("electron");
+const { remote, ipcRenderer } = window.require("electron");
 // 使用electron-store
 const Store = window.require("electron-store");
 // 起手式
@@ -123,7 +123,7 @@ function App() {
         saveFilesToStore(newFiles);
       });
     } else {
-      const oldPath = files[id].path
+      const oldPath = files[id].path;
 
       fileHelper.renameFile(oldPath, newPath).then(() => {
         setFiles(newFiles);
@@ -205,6 +205,16 @@ function App() {
     return files[openID];
   });
   const fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr;
+
+  useEffect(() => {
+    const callback = () => {
+      console.log("嗨menu");
+    };
+    ipcRenderer.on("create-new-file", callback);
+    return () => {
+      ipcRenderer.removeListener("create-new-file", callback);
+    };
+  });
   return (
     <div className="App container-fluid px-0">
       <div className="row no-gutters">

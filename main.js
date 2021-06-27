@@ -1,6 +1,9 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow,Menu } = require("electron");
 // 判斷環境套件引用
 const isDev = require("electron-is-dev");
+// menu
+const menuTemplate = require("./src/menuTemplate");
+
 let mainWindow;
 
 app.on("ready", () => {
@@ -21,4 +24,9 @@ app.on("ready", () => {
   const urlLocation = isDev ? "http://localhost:3000/" : "先略過";
   mainWindow.loadURL(urlLocation);
   // 主視窗 end
+
+  // set the menu start
+  let menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+  // set the menu end
 });
