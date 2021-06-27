@@ -5,7 +5,7 @@ import { faEdit, faTimes, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState, useRef } from "react";
 import useKeyPress from "../hooks/useKeyPress";
 import useContextMenu from "../hooks/useContextMenu";
-
+import { getParentNode } from "../utils/helper";
 
 // 透過remote取得主進程並解構API出來使用 start
 const { remote } = window.require("electron");
@@ -51,27 +51,33 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     // };
   );
 
-  const clickedItem = useContextMenu([
-    {
-      label: "打開",
-      click: () => {
-        console.log("clicking",clickedItem.current);
+  const clickedItem = useContextMenu(
+    [
+      {
+        label: "打開",
+        click: () => {
+          const parentElement = getParentNode(clickedItem.current, "file-item");
+          if (parentElement) {
+            onFileClick(parentElement.dataset.id);
+          }
+          console.log("parentElement", parentElement.dataset.id);
+        },
       },
-    },
-    {
-      label: "重命名",
-      click: () => {
-        console.log("renaming");
+      {
+        label: "重命名",
+        click: () => {
+          console.log("renaming");
+        },
       },
-    },
-    {
-      label: "刪除",
-      click: () => {
-        console.log("deleting");
+      {
+        label: "刪除",
+        click: () => {
+          console.log("deleting");
+        },
       },
-    },
-  ],'.file-list');
-
+    ],
+    ".file-list",[files]
+  );
 
   useEffect(() => {
     const newFile = files.find((file) => file.isNew);
@@ -95,8 +101,10 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     <ul className="list-group list-group-flush file-list">
       {files.map((file) => (
         <li
-          className="list-group-item bg-light row d-flex align-items-center mx-0"
+          className="list-group-item bg-light row d-flex align-items-center file-item mx-0"
           key={file.id}
+          data-id={file.id}
+          data-title={file.title}
         >
           {file.id !== editStatus && !file.isNew && (
             <>

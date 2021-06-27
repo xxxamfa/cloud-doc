@@ -3,7 +3,7 @@ const { remote } = window.require("electron");
 const { Menu, MenuItem } = remote;
 
 // targetSelector:限制右鍵有效範圍
-const useContextMenu = (itemArr, targetSelector) => {
+const useContextMenu = (itemArr, targetSelector,deps) => {
   let clickedElement = useRef(null);
   useEffect(() => {
     const menu = new Menu();
@@ -22,7 +22,7 @@ const useContextMenu = (itemArr, targetSelector) => {
     return () => {
       window.removeEventListener("contextmenu", handleContextMenu);
     };
-  }, []);
+  }, deps);
   return clickedElement;
 };
 

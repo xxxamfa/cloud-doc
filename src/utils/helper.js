@@ -11,3 +11,14 @@ export const objToArr = (obj) => {
     return obj[key];
   });
 };
+// 讓同一筆資料右鍵點擊顯示同個資料
+export const getParentNode = (node, parentClassName) => {
+  let current = node;
+  while (current !== null) {
+    if (current.classList.contains(parentClassName)) {
+      return current;
+    }
+    current = current.parentNode;
+  }
+  return false;
+};
