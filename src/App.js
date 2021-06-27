@@ -19,8 +19,7 @@ import { v4 as uuidv4 } from "uuid";
 import { flattenArr, objToArr } from "./utils/helper";
 import fileHelper from "./utils/fileHelper";
 // node 模塊
-// 路徑組合功能
-const { join } = window.require("path");
+const { join, basename, extname, dirname } = window.require("path");
 // 直接使用主進程API可透過remote
 const { remote } = window.require("electron");
 // 使用electron-store
@@ -112,7 +111,10 @@ function App() {
     }
   };
   const updateFileName = (id, title, isNew) => {
-    const newPath = join(savedLocation, `${title}.md`);
+    const newPath = isNew
+      ? join(savedLocation, `${title}.md`)
+      : join(dirname(files[id].path), `${title}.md`);
+    console.log("newPath", newPath);
     const modifiedFile = { ...files[id], title, isNew: false, path: newPath };
     const newFiles = { ...files, [id]: modifiedFile };
     if (isNew) {
@@ -121,9 +123,9 @@ function App() {
         saveFilesToStore(newFiles);
       });
     } else {
-      const oldPath = join(savedLocation, `${files[id].title}.md`);
+      const oldPath = files[id].path
 
-      fileHelper.renameFile(oldPath, newFiles).then(() => {
+      fileHelper.renameFile(oldPath, newPath).then(() => {
         setFiles(newFiles);
         saveFilesToStore(newFiles);
       });
@@ -149,11 +151,9 @@ function App() {
   };
 
   const saveCurrentFile = () => {
-    fileHelper
-      .writeFile(join(savedLocation, `${activeFile.title}.md`), activeFile.body)
-      .then(() => {
-        setUnsavedFileIDs(unsavedFileIDs.filter((id) => id !== activeFile.id));
-      });
+    fileHelper.writeFile(activeFile.path, activeFile.body).then(() => {
+      setUnsavedFileIDs(unsavedFileIDs.filter((id) => id !== activeFile.id));
+    });
   };
   const importFiles = () => {
     remote.dialog
@@ -164,8 +164,42 @@ function App() {
       })
       .then((resolve) => {
         console.log("filePaths", resolve.filePaths);
+        const paths = resolve.filePaths;
+        if (Array.isArray(paths)) {
+          // filter out the path we already have in electron store
+          // ["/Users/liusha/Desktop/name1.md", "/Users/liusha/Desktop/name2.md"]
+          const filteredPaths = paths.filter((path) => {
+            const alreadyAdded = Object.values(files).find((file) => {
+              return file.path === path;
+            });
+            return !alreadyAdded;
+          });
+          // extend the path array to an array contains files info
+          // [{id: '1', path: '', title: ''}, {}]
+          const importFilesArr = filteredPaths.map((path) => {
+            return {
+              id: uuidv4(),
+              title: basename(path, extname(path)),
+              path,
+            };
+          });
+          // get the new files object in flattenArr
+          const newFiles = { ...files, ...flattenArr(importFilesArr) };
+          console.log("importFilesArr", importFilesArr);
+          console.log("newFiles", newFiles);
+          // setState and update electron store
+          setFiles(newFiles);
+          saveFilesToStore(newFiles);
+          if (importFilesArr.length > 0) {
+            remote.dialog.showMessageBox({
+              type: "info",
+              title: `成功导入了${importFilesArr.length}个文件`,
+              message: `成功导入了${importFilesArr.length}个文件`,
+            });
+          }
+        }
       });
-  }
+  };
 
   const openedFiles = openedFileIDs.map((openID) => {
     return files[openID];
