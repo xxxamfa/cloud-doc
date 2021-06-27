@@ -5,6 +5,11 @@ import { faEdit, faTimes, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState, useRef } from "react";
 import useKeyPress from "../hooks/useKeyPress";
 
+// 透過remote取得主進程並解構API出來使用 start
+const { remote } = window.require("electron");
+const { Menu, MenuItem } = remote;
+// 透過remote取得主進程並解構API出來使用 end
+
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   // 是否為修改狀態與修改的值
   const [editStatus, setEditStatus] = useState(false);
@@ -43,6 +48,42 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     //   document.removeEventListener("keyup", handleInputEvent);
     // };
   );
+  // 右鍵menu寫在useEffect
+  useEffect(() => {
+    const menu = new Menu();
+    menu.append(
+      new MenuItem({
+        label: "打開",
+        click: () => {
+          console.log("clicking");
+        },
+      })
+    );
+    menu.append(
+      new MenuItem({
+        label: "重命名",
+        click: () => {
+          console.log("renaming");
+        },
+      })
+    );
+    menu.append(
+      new MenuItem({
+        label: "刪除",
+        click: () => {
+          console.log("deleting");
+        },
+      })
+    );
+    const handleContextMenu = (e) => {
+      menu.popup({window:remote.getCurrentWindow()})
+    }
+    window.addEventListener('contextmenu', handleContextMenu)
+    return () => {
+      window.removeEventListener("contextmenu", handleContextMenu);
+    }
+  });
+
   useEffect(() => {
     const newFile = files.find((file) => file.isNew);
     if (newFile) {
